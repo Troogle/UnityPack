@@ -1,4 +1,4 @@
-import lzma
+import pylzma
 import struct
 from io import BytesIO
 
@@ -162,19 +162,7 @@ class ArchiveBlockInfo:
 			return buf
 		ty = self.compression_type
 		if ty == CompressionType.LZMA:
-			props, dict_size = struct.unpack("<BI", buf.read(5))
-			lc = props % 9
-			props = int(props / 9)
-			pb = int(props / 5)
-			lp = props % 5
-			dec = lzma.LZMADecompressor(format=lzma.FORMAT_RAW, filters=[{
-				"id": lzma.FILTER_LZMA1,
-				"dict_size": dict_size,
-				"lc": lc,
-				"lp": lp,
-				"pb": pb,
-			}])
-			res = dec.decompress(buf.read())
+			res = pylzma.decompress(buf.read(), maxlength=self.uncompressed_size)
 			return BytesIO(res)
 		if ty in (CompressionType.LZ4, CompressionType.LZ4HC):
 			res = lz4_decompress(buf.read(self.compressed_size), self.uncompressed_size)
